@@ -384,7 +384,7 @@ static void MX_USART3_UART_Init(void)
 
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 9600;
+  huart3.Init.BaudRate = 115200;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
@@ -447,6 +447,20 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/* Re-arm receive IT after a UART error so the ISR is never permanently lost */
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+    if (huart->Instance == USART1)
+    {
+        HAL_UART_Receive_IT(&huart1, &screen_rx_byte, 1);
+    }
+    if (huart->Instance == USART3)
+    {
+        HAL_UART_Receive_IT(&huart3, &lora_rx_byte, 1);
+    }
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART1) //nextion uart bu adresi kullanyor.
@@ -506,8 +520,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     		}
     	}else{
     		lora_msg[lora_rx_index] = '\0';   // NULL termination EKLENDİ
+    		if (lora_rx_index > 0) {          // ignore empty messages (stray \n from LoRa module response)
+    		    xQueueSendFromISR(qLora, lora_msg, NULL);
+    		}
     		lora_rx_index = 0;
-    		xQueueSendFromISR(qLora,lora_msg,NULL);
     	}
     	HAL_UART_Receive_IT(&huart3, &lora_rx_byte, 1);
 
@@ -642,33 +658,33 @@ void screen_data_rx_task(void* pvParameters){
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
-				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x05: // HELP
-				snprintf(nextion_msg,sizeof(nextion_msg),"HELP\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"HELP");
 				lora_send_msg(nextion_msg);
 
 				break;
 
 			case 0x06: // DANGER
-				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x07: // INJURED
-				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x08: // AREA UNSAFE
-				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x09: // RETURN TO BASE
-				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE");
 				lora_send_msg(nextion_msg);
 				break;
 
