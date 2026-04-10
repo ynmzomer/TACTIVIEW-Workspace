@@ -65,6 +65,8 @@ static inline float ema_alpha(void) {
 // ----------------------------------------------------
 void max30102_user_init(void)
 {
+    static uint8_t retry_count = 0u;
+
     MAX30102_Handle_t max30102;
     max30102.mode            = MAX30102_MODE_SPO2;
     max30102.sample_rate     = MAX30102_SAMPLERATE_200;
@@ -74,12 +76,16 @@ void max30102_user_init(void)
     max30102.led_current_red = MAX30102_LED_CURR_8MA;     // eski değeri 8
 
     if (max30102_init(&max30102) != MAX30102_OK) {
-    	HAL_I2C_DeInit(I2C_HANDLE);
-    	max30102_reset();
-    	max30102_user_init();
+        if (retry_count < 3u) {
+            retry_count++;
+            HAL_I2C_DeInit(I2C_HANDLE);
+            max30102_reset();
+            max30102_user_init();
+        }
+        /* retry_count >= 3: stop, sensor unavailable */
+    } else {
+        retry_count = 0u; /* reset on success */
     }
-
-
 }
 
 // ----------------------------------------------------

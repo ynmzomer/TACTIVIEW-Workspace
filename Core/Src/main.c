@@ -536,7 +536,7 @@ void pulse_task(void *pvParameters) {
 
 
     for (;;) {
-        if (xSemaphoreTake(semphr_i2c, portMAX_DELAY) == pdTRUE) {
+        if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             max30102_user_read_bpm(&bpm);
             xSemaphoreGive(semphr_i2c);
         }
@@ -559,7 +559,7 @@ void enviroment_task(void *pvParameters) {
     struct bme68x_data air_data;
     for (;;) {
 
-        if (xSemaphoreTake(semphr_i2c, portMAX_DELAY) == pdTRUE) {
+        if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             bme680_read_withiaq(&air_data);
             xSemaphoreGive(semphr_i2c);
 
@@ -572,7 +572,7 @@ void enviroment_task(void *pvParameters) {
 void body_temp_task(void *pvParameters) {
     float temp;
     for (;;) {
-        if (xSemaphoreTake(semphr_i2c, portMAX_DELAY) == pdTRUE) {
+        if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             mlx90614_read_temp(&temp);
             xSemaphoreGive(semphr_i2c);
         }
@@ -607,7 +607,7 @@ void screen_data_tx_task(void *pvParameters) {
   		  NX_send_cmd("page3.m3.txt=page3.m2.txt");
   		  NX_send_cmd("page3.m2.txt=page3.m1.txt");
   		  char nextionCmd[64];
-  		  sprintf(nextionCmd,"page3.m1.txt=\"%s\"", lora_msg_task);
+  		  snprintf(nextionCmd, sizeof(nextionCmd), "page3.m1.txt=\"%s\"", lora_msg_task);
   		  NX_send_cmd(nextionCmd);
 
 
