@@ -1,0 +1,7 @@
+../Core/Src/Screen/screen.c:23:6:NX_send_raw	16	static
+../Core/Src/Screen/screen.c:29:6:NX_term	16	static
+../Core/Src/Screen/screen.c:36:6:NX_send_cmd	16	static
+../Core/Src/Screen/screen.c:43:6:NX_set_txt	96	static
+../Core/Src/Screen/screen.c:52:6:NX_set_data	96	static
+../Core/Src/Screen/screen.c:61:6:NX_set_float	96	static
+../Core/Src/Screen/screen.c:71:6:NX_Init	8	static

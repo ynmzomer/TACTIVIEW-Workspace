@@ -1,0 +1,7 @@
+../Core/Src/MAX30102_Driver/MAX30102.c:27:19:max30102_read_reg	2
+../Core/Src/MAX30102_Driver/MAX30102.c:50:19:max30102_write_reg	2
+../Core/Src/MAX30102_Driver/MAX30102.c:85:19:max30102_init	8
+../Core/Src/MAX30102_Driver/MAX30102.c:158:19:max30102_read_fifo	2
+../Core/Src/MAX30102_Driver/MAX30102.c:203:19:max30102_read_fifo_multi	6
+../Core/Src/MAX30102_Driver/MAX30102.c:248:6:max30102_reset	2
+../Core/Src/MAX30102_Driver/MAX30102.c:266:19:max30102_int_enable	1
