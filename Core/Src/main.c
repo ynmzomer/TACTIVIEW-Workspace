@@ -384,7 +384,7 @@ static void MX_USART3_UART_Init(void)
 
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 115200;
+  huart3.Init.BaudRate = 9600;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
@@ -642,33 +642,33 @@ void screen_data_rx_task(void* pvParameters){
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
-				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK");
+				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x05: // HELP
-				snprintf(nextion_msg,sizeof(nextion_msg),"HELP");
+				snprintf(nextion_msg,sizeof(nextion_msg),"HELP\n");
 				lora_send_msg(nextion_msg);
 
 				break;
 
 			case 0x06: // DANGER
-				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER");
+				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x07: // INJURED
-				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED");
+				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x08: // AREA UNSAFE
-				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE");
+				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x09: // RETURN TO BASE
-				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE");
+				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE\n");
 				lora_send_msg(nextion_msg);
 				break;
 
