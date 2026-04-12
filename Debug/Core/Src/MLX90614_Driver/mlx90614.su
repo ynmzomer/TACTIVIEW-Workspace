@@ -1,7 +1,0 @@
-../Core/Src/MLX90614_Driver/mlx90614.c:10:19:mlx90614_init	16	static
-../Core/Src/MLX90614_Driver/mlx90614.c:19:19:MLX90614_Config	24	static
-../Core/Src/MLX90614_Driver/mlx90614.c:66:6:mlx90614_read_temp	24	static
-../Core/Src/MLX90614_Driver/mlx90614.c:85:19:MLX90614_Write	40	static
-../Core/Src/MLX90614_Driver/mlx90614.c:94:19:MLX90614_Read	40	static
-../Core/Src/MLX90614_Driver/mlx90614.c:104:19:MLX90614_ID_Check	32	static
-../Core/Src/MLX90614_Driver/mlx90614.c:119:13:MLX90614_Error_Handler	16	static
