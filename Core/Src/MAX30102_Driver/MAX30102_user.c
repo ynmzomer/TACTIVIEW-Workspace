@@ -49,6 +49,101 @@ uint32_t red_buf[32];
 float    ir_filtered[32];
 uint8_t  num_samples = 0;
 
+//================ SPO2 PART =================================
+#define SPO2_BUF_SIZE 50
+
+static uint32_t spo2_ir_buf[SPO2_BUF_SIZE];
+static uint32_t spo2_red_buf[SPO2_BUF_SIZE];
+static uint16_t spo2_index = 0;
+static uint8_t spo2_ready = 0;
+
+volatile spo2_debug_t spo2_dbg;
+
+static void spo2_push_sample(uint32_t ir, uint32_t red)
+{
+    spo2_ir_buf[spo2_index] = ir;
+    spo2_red_buf[spo2_index] = red;
+    spo2_index++;
+
+    if (spo2_index >= SPO2_BUF_SIZE)
+    {
+        spo2_index = 0;
+        spo2_ready = 1;
+    }
+}
+
+static uint8_t spo2_compute(void)
+{
+    float ir_mean = 0.0f;
+    float red_mean = 0.0f;
+
+    for (int i = 0; i < SPO2_BUF_SIZE; i++)
+    {
+        ir_mean  += spo2_ir_buf[i];
+        red_mean += spo2_red_buf[i];
+    }
+
+    ir_mean  /= SPO2_BUF_SIZE;
+    red_mean /= SPO2_BUF_SIZE;
+
+    if (ir_mean < 50000.0f || red_mean < 20000.0f)
+        return 0;
+
+    float ir_ac = 0.0f;
+    float red_ac = 0.0f;
+
+    for (int i = 0; i < SPO2_BUF_SIZE; i++)
+    {
+        float ir  = (float)spo2_ir_buf[i]  - ir_mean;
+        float red = (float)spo2_red_buf[i] - red_mean;
+        ir_ac  += ir * ir;
+        red_ac += red * red;
+    }
+
+    ir_ac  = sqrtf(ir_ac / SPO2_BUF_SIZE);
+    red_ac = sqrtf(red_ac / SPO2_BUF_SIZE);
+
+    if (ir_ac <= 1.0f || red_ac <= 1.0f)
+        return 0;
+    if (ir_ac > ir_mean || red_ac > red_mean)
+        return 0;
+
+    float R = (red_ac / red_mean) / (ir_ac / ir_mean);
+
+    if (isnan(R) || isinf(R))
+        return 0;
+
+    float spo2 = 110.0f - 6.0f * R;
+    spo2 += 2.0f; /* simple calibration offset */
+
+    if (spo2 > 100.0f) spo2 = 100.0f;
+    if (spo2 < 80.0f)  spo2 = 80.0f;
+
+    spo2_dbg.ir_mean  = ir_mean;
+    spo2_dbg.red_mean = red_mean;
+    spo2_dbg.ac_ir    = ir_ac;
+    spo2_dbg.ac_red   = red_ac;
+
+    return (uint8_t)(spo2 + 0.5f);
+}
+
+static void spo2_reset(void)
+{
+    spo2_index = 0;
+    spo2_ready = 0;
+
+    for (int i = 0; i < SPO2_BUF_SIZE; i++)
+    {
+        spo2_ir_buf[i] = 0;
+        spo2_red_buf[i] = 0;
+    }
+
+    spo2_dbg.ir_mean = 0;
+    spo2_dbg.red_mean = 0;
+    spo2_dbg.ac_ir = 0;
+    spo2_dbg.ac_red = 0;
+}
+
 static inline float ema_beta(void) {
     float beta = 0.10f;               // DC takip hızı (0.01–0.2 arası deneyebilirsin)
     if (beta > 1.0f) beta = 1.0f;
@@ -73,7 +168,7 @@ void max30102_user_init(void)
     max30102.adc_range       = MAX30102_ADCRANGE_16384;
     max30102.led_pw          = MAX30102_PW_411;            // 18-bit
     max30102.led_current_ir  = MAX30102_LED_CURR_16MA;     // 12–20 mA arası deneyebilirsin eski değer 16
-    max30102.led_current_red = MAX30102_LED_CURR_8MA;     // eski değeri 8
+    max30102.led_current_red = MAX30102_LED_CURR_16MA;     // SpO2 için 16mA gerekli
 
     if (max30102_init(&max30102) != MAX30102_OK) {
         if (retry_count < 3u) {
@@ -91,18 +186,52 @@ void max30102_user_init(void)
 // ----------------------------------------------------
 // Polling okuma (main loop içinde çağır)
 // ----------------------------------------------------
-void max30102_user_read_bpm(uint8_t* bpm)
+void max30102_user_read(uint8_t* bpm, uint8_t* spo2)
 {
-	static uint8_t measured_bpm = 0 ;
-    if (max30102_read_fifo_multi(ir_buf, red_buf, &num_samples) == MAX30102_OK) {
-        // Filtre + peak
-        filter_ir_block(ir_buf, ir_filtered, num_samples);
-        for (uint8_t i = 0u; i < num_samples; i++) {
-        	measured_bpm = detect_peak_and_bpm(ir_filtered[i]); // yalnızca UART output //şimdilik bpm var.
+    static uint8_t measured_bpm = 0;
+    static uint8_t measured_spo2 = 0;
+    static float spo2_filtered = 0;
 
+    if (max30102_read_fifo_multi(ir_buf, red_buf, &num_samples) == MAX30102_OK)
+    {
+        filter_ir_block(ir_buf, ir_filtered, num_samples);
+
+        for (uint8_t i = 0; i < num_samples; i++)
+        {
+            uint8_t bpm_val = detect_peak_and_bpm(ir_filtered[i]);
+
+            if (bpm_val > 3)
+            {
+                measured_bpm = bpm_val;
+            }
+
+            /* finger detection using IR level */
+            if (ir_buf[i] > 50000)
+            {
+                spo2_push_sample(ir_buf[i], red_buf[i]);
+            }
+            else
+            {
+                measured_spo2 = 0;
+                spo2_reset();
+            }
+        }
+
+        /* compute SpO2 only when buffer full */
+        if (spo2_ready)
+        {
+            uint8_t spo2_val = spo2_compute();
+
+            if (spo2_val > 0)
+            {
+                spo2_filtered = 0.8f * spo2_filtered + 0.2f * spo2_val;
+                measured_spo2 = (uint8_t)spo2_filtered;
+            }
         }
     }
-     *bpm = measured_bpm;
+
+    *bpm  = measured_bpm;
+    *spo2 = measured_spo2;
 }
 
 // ----------------------------------------------------

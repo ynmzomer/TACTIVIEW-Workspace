@@ -8,6 +8,7 @@
 #include "screen.h"
 
 const char *box_pulse 			= "t7" ;
+const char *box_spo2 			= "t8" ;
 const char *box_body_temp 		= "t10";
 const char *box_enviroment_temp = "t12";
 const char *box_humidity 		= "t16";

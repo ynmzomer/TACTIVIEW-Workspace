@@ -96,7 +96,7 @@ TaskHandle_t datarx_handle;
 
 
 static SemaphoreHandle_t semphr_i2c;
-static QueueHandle_t qEnv, qBody, qBpm, qLora;
+static QueueHandle_t qEnv, qBody, qBpm, qSpo2, qLora;
 /* USER CODE END 0 */
 
 /**
@@ -166,6 +166,7 @@ int main(void)
   qEnv = xQueueCreate(5,sizeof(struct bme68x_data));
   qBody = xQueueCreate(5,sizeof(float));
   qBpm =  xQueueCreate(5,sizeof(uint8_t));
+  qSpo2 = xQueueCreate(5,sizeof(uint8_t));
   qLora = xQueueCreate(2,sizeof(lora_msg));
 
   xSemaphoreGive(semphr_i2c);
@@ -547,26 +548,26 @@ void sensors_init_task(void *pvParameters) {
 
 void pulse_task(void *pvParameters) {
     static uint8_t bpm = 0;
-    uint8_t prev = 0;
-
+    static uint8_t spo2 = 0;
+    uint8_t prev_bpm = 0;
 
     for (;;) {
         if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
-            max30102_user_read_bpm(&bpm);
+            max30102_user_read(&bpm, &spo2);
             xSemaphoreGive(semphr_i2c);
         }
         if(bpm > 2){
-        	prev = bpm;
+        	prev_bpm = bpm;
         }else{
         	if(bpm == PULSE_FINGER_NOT_DETECTED){
-        		bpm = 0 ; //make zero no pulse detection
-        		prev = 0; //make zero no pulse detection
+        		bpm = 0;
+        		prev_bpm = 0;
         	}
-        	bpm  = prev;
-
+        	bpm = prev_bpm;
         }
-        xQueueSend(qBpm,&bpm,0); //owerwrites existing data.
-        vTaskDelay(pdMS_TO_TICKS(10)); //optimization
+        xQueueSend(qBpm, &bpm, 0);
+        xQueueSend(qSpo2, &spo2, 0);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
@@ -598,6 +599,7 @@ void body_temp_task(void *pvParameters) {
 
 void screen_data_tx_task(void *pvParameters) {
 	uint8_t bpm;
+	uint8_t spo2;
 	char lora_msg_task[30];
 	float body_temp;
     struct bme68x_data air_data;
@@ -608,6 +610,9 @@ void screen_data_tx_task(void *pvParameters) {
     HAL_UART_Receive_IT(&huart3, &lora_rx_byte, 1); //lora recieve interrupt başlatıldı.
     for (;;) {
     	if(xQueueReceive(qBpm, &bpm, 50) != pdPASS){ //en hızlı gelen veri
+
+    	}
+    	if(xQueueReceive(qSpo2, &spo2, 50) != pdPASS){ //spo2 verisi
 
     	}
     	if(xQueueReceive(qBody, &body_temp, 50) != pdPASS){ //orta hızlı gelen veri
@@ -629,6 +634,7 @@ void screen_data_tx_task(void *pvParameters) {
     	}
     	//queue dan alınan verileri ekrana gönder.
     	NX_set_data(box_pulse, (int16_t)bpm);
+    	NX_set_data(box_spo2, (int16_t)spo2);
     	NX_set_data(box_enviroment_temp, (int16_t)(air_data.temperature) + 0.5f);
     	NX_set_data(box_humidity, (int16_t)(air_data.humidity + 0.5f));
     	NX_set_float(box_body_temp, (body_temp));
@@ -657,33 +663,33 @@ void screen_data_rx_task(void* pvParameters){
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
-				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x05: // HELP
-				snprintf(nextion_msg,sizeof(nextion_msg),"HELP\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"HELP");
 				lora_send_msg(nextion_msg);
 
 				break;
 
 			case 0x06: // DANGER
-				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x07: // INJURED
-				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x08: // AREA UNSAFE
-				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x09: // RETURN TO BASE
-				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE");
 				lora_send_msg(nextion_msg);
 				break;
 
