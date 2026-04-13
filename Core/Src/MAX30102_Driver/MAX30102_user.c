@@ -204,6 +204,10 @@ void max30102_user_read(uint8_t* bpm, uint8_t* spo2)
             {
                 measured_bpm = bpm_val;
             }
+            else if (bpm_val == PULSE_FINGER_NOT_DETECTED)
+            {
+                measured_bpm = 0;
+            }
 
             /* finger detection using IR level */
             if (ir_buf[i] > 50000)
