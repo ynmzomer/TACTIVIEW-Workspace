@@ -395,22 +395,30 @@ uint8_t detect_peak_and_bpm(float sample)
         if (new_thr < 30.0f) new_thr = 30.0f; // burada min threshold 30 olabilir böyle ayarlanmış.
         peak_threshold = new_thr;
 
-        // FIFO dolunca BPM hesapla → yalnızca UART'a yaz
+        // FIFO dolunca BPM hesapla — medyan tabanlı (artefakt interval'a bağışıklı)
         if (peak_hist_count == MAX_PEAK_HISTORY) {
-            uint32_t sum = 0u;
-            for (uint8_t i = 0u; i < MAX_PEAK_HISTORY; i++) sum += peak_intervals_ms[i];
-
-            float avg_dt_ms = (float)sum / (float)MAX_PEAK_HISTORY;
-            float bpm = 60000.0f / avg_dt_ms; // ms → dakikaya çeviri
+            /* insertion sort: 7 eleman için en uygun küçük-dizi sıralaması */
+            uint32_t sorted[MAX_PEAK_HISTORY];
+            for (uint8_t i = 0u; i < MAX_PEAK_HISTORY; i++) sorted[i] = peak_intervals_ms[i];
+            for (uint8_t i = 1u; i < MAX_PEAK_HISTORY; i++) {
+                uint32_t key = sorted[i];
+                int8_t   j   = (int8_t)i - 1;
+                while (j >= 0 && sorted[j] > key) {
+                    sorted[j + 1u] = sorted[j];
+                    j--;
+                }
+                sorted[j + 1u] = key;
+            }
+            float bpm = 60000.0f / (float)sorted[MAX_PEAK_HISTORY / 2u];
 
             // EMA ile yumuşat
             if (!bpm_ema_inited) { bpm_ema_inited = 1u; bpm_ema = bpm; }
             else {
-                const float k = 0.20f; // 0.1–0.3 arası
+                const float k = 0.30f; // medyan sonrası hızlı yakınsama
                 bpm_ema = bpm_ema + k * (bpm - bpm_ema);
             }
 
-            return (uint8_t)bpm_ema;
+            return (uint8_t)(bpm_ema + 0.5f);
         }
     }
 

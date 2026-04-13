@@ -11,7 +11,7 @@
 // ================== Ayarlar ==================
 #define SAMPLE_RATE_HZ       200u     // MAX30102 konfig ile eşleşmeli
 #define WARMUP_MS            2000u    // parmak takıldıktan sonra 2 sn ısınma
-#define MAX_PEAK_HISTORY     7u       // 5 interval ile daha hızlı BPM (bilek ölçümü için)
+#define MAX_PEAK_HISTORY     5u       // 5 interval ile daha hızlı BPM (bilek ölçümü için)
 #define MIN_RR_MS            150u     // refrakter süre (>=150ms → <=400 BPM)
 #define INIT_THRESHOLD       10.0f    // başlangıç eşiği (adaptif güncellenir) //20 default
 

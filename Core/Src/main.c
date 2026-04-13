@@ -557,7 +557,11 @@ void pulse_task(void *pvParameters) {
             xSemaphoreGive(semphr_i2c);
         }
         if(bpm > 2){
-        	prev_bpm = bpm;
+        	/* 1-BPM deadband: sadece yuvarlama sınırındaki ±1 titreşimi filtreler */
+        	if(prev_bpm == 0 || (uint8_t)abs((int)bpm - (int)prev_bpm) > 1){
+        		prev_bpm = bpm;
+        	}
+        	bpm = prev_bpm;
         }else{
         	if(bpm == PULSE_FINGER_NOT_DETECTED){
         		bpm = 0;
@@ -663,33 +667,33 @@ void screen_data_rx_task(void* pvParameters){
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
-				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x05: // HELP
-				snprintf(nextion_msg,sizeof(nextion_msg),"HELP\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"HELP");
 				lora_send_msg(nextion_msg);
 
 				break;
 
 			case 0x06: // DANGER
-				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x07: // INJURED
-				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x08: // AREA UNSAFE
-				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x09: // RETURN TO BASE
-				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE");
 				lora_send_msg(nextion_msg);
 				break;
 
