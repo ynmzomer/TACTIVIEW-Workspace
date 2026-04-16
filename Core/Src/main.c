@@ -667,33 +667,33 @@ void screen_data_rx_task(void* pvParameters){
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
-				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK");
+				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x05: // HELP
-				snprintf(nextion_msg,sizeof(nextion_msg),"HELP");
+				snprintf(nextion_msg,sizeof(nextion_msg),"HELP\n");
 				lora_send_msg(nextion_msg);
 
 				break;
 
 			case 0x06: // DANGER
-				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER");
+				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x07: // INJURED
-				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED");
+				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x08: // AREA UNSAFE
-				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE");
+				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE\n");
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x09: // RETURN TO BASE
-				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE");
+				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE\n");
 				lora_send_msg(nextion_msg);
 				break;
 
