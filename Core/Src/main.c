@@ -666,6 +666,9 @@ void screen_data_rx_task(void* pvParameters){
 		if (screen_rx_byte == END_CHAR) {
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
+			case 0x01: //msg box number reset
+				NX_set_val("n0", 0); //if user enters the messages
+				break;
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
 				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
 				lora_send_msg(nextion_msg);

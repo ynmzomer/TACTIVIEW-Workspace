@@ -69,6 +69,16 @@ void NX_set_float(const char *obj, float data)
 	}
 }
 
+void NX_set_val(const char *obj, int16_t data)
+{
+	char cmd[64];
+	int n = snprintf(cmd, sizeof(cmd), "%s.val=%d", obj, data);
+	if (n > 0 )
+	{
+		NX_send_cmd(cmd);
+	}
+}
+
 void NX_Init(void)
 {
 	NX_send_cmd("bkcmd=0"); //Geri dönüş kodlarını aç

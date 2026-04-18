@@ -32,6 +32,8 @@ void NX_set_data(const char *obj, const int16_t data);
 
 void NX_set_float(const char *obj, const float data);
 
+void NX_set_val(const char *obj, int16_t data);
+
 void NX_Init(void);
 
 extern const char *box_pulse           ;
