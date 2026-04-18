@@ -239,19 +239,6 @@ void max30102_user_read(uint8_t* bpm, uint8_t* spo2)
 }
 
 // ----------------------------------------------------
-// Tekli okuma (debug amaçlı)
-// ----------------------------------------------------
-void max30102_user_readfifo_single(void)
-{
-    uint32_t ir, red;
-    uint8_t  samples;
-    if (max30102_read_fifo(&ir, &red, &samples) == MAX30102_OK) {
-
-    }
-}
-
-
-// ----------------------------------------------------
 // Filtre: blok işleme
 // ----------------------------------------------------
 void filter_ir_block(const uint32_t *in, float *out, uint8_t n)
@@ -429,9 +416,4 @@ uint8_t detect_peak_and_bpm(float sample)
 
 
 
-//==============call from gpio ISR (interrupt mode)===============
-
-void sensor_read_fifo_isr(){
-
-}
 

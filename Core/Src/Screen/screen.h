@@ -44,10 +44,8 @@ extern const char *box_humidity 	   ;
 extern const char *box_air_quality 	   ;
 
 extern uint8_t screen_rx_byte;
-extern uint8_t screen_state ;
-extern uint8_t screen_page;
-extern uint8_t screen_comp ;
-extern uint8_t screen_handle ;
+extern uint8_t screen_state;
+extern uint8_t screen_comp;
 
 
 #endif /* SRC_SCREEN_SCREEN_H_ */

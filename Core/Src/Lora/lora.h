@@ -17,7 +17,6 @@ extern UART_HandleTypeDef huart3;
 #define LORA_TIMEOUT 500
 
 void lora_send_msg(char *msg);
-void lora_recive_msg(char *msg);
 
 extern char nextion_msg[20]; //nextiondan loraya giedecek buffer.
 extern char lora_msg[30];    //loradan nextiona gidecek buffer.

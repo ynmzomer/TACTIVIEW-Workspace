@@ -16,9 +16,7 @@ const char *box_air_quality 	= "t19";
 
 uint8_t screen_rx_byte;
 uint8_t screen_state = 0;
-uint8_t screen_page = 0;
 uint8_t screen_comp = 0;
-uint8_t screen_handle = 0 ;
 
 
 void NX_send_raw(const void *buf, size_t len)

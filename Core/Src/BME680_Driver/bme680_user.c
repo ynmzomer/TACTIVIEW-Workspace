@@ -143,23 +143,6 @@ void bme680_user_init(void)
 }
 
 
-//==========READ Functions=============/// POLLING CALL FROM LOOP
-void bme680_read(void)
-{
-    bme68x_set_op_mode(BME68X_FORCED_MODE, &bme);
-    bme.delay_us(200000, bme.intf_ptr);  // 200 ms ölçüm için yeterli
-    rslt = bme68x_get_data(BME68X_FORCED_MODE, &data, &n_fields, &bme);
-
-    if (rslt == BME68X_OK && n_fields > 0)
-    {
-        printf("Temp: %.2f °C | Hum: %.2f %% | Pres: %.2f hPa | Gas: %.0f Ohm\r\n",
-            data.temperature,
-            data.humidity,
-            data.pressure / 100.0f,
-            data.gas_resistance);
-    }
-}
-
 /**
  * @brief  Performs a single forced-mode measurement from the BME680/BME688.
  *
