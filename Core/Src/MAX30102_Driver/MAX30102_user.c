@@ -144,6 +144,19 @@ static void spo2_reset(void)
     spo2_dbg.ac_red = 0;
 }
 
+/**
+ * @brief  Returns 1 if a finger is currently detected on the MAX30102, 0 otherwise.
+ *
+ * Exposes the static finger_detected flag so pulse_task can switch between
+ * fast (10 ms) and slow (500 ms) polling rates for low-power operation.
+ * Only written inside update_finger_detection(), which is called from
+ * pulse_task's semaphore-protected I2C read — no ISR race condition.
+ */
+uint8_t max30102_is_finger_detected(void)
+{
+    return finger_detected;
+}
+
 static inline float ema_beta(void) {
     float beta = 0.10f;               // DC takip hızı (0.01–0.2 arası deneyebilirsin)
     if (beta > 1.0f) beta = 1.0f;

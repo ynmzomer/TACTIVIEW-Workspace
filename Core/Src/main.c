@@ -491,6 +491,16 @@ void pulse_task(void *pvParameters) {
     static uint8_t spo2 = 0;
     uint8_t prev_bpm = 0;
 
+    /* Adaptive polling rates for low-power operation:
+     *   FAST (10 ms)  — parmak sensörde, aktif ölçüm yapılıyor.
+     *   SLOW (500 ms) — parmak yok; CPU büyük ölçüde SLEEP modunda kalır,
+     *                   I2C okuma %98 azalır, tickless idle çok daha uzun uyuyabilir.
+     * Parmak takılınca en fazla 1 adet 500 ms döngü geçtikten sonra hızlı
+     * moda geçilir — bu süre MAX30102 sürücüsünün 400 ms HOLD_ON bekleme
+     * penceresi içinde kaldığından ölçüm kalitesini etkilemez. */
+    static const TickType_t POLL_FAST_MS = pdMS_TO_TICKS(10);
+    static const TickType_t POLL_SLOW_MS = pdMS_TO_TICKS(500);
+
     for (;;) {
         if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             max30102_user_read(&bpm, &spo2);
@@ -511,7 +521,13 @@ void pulse_task(void *pvParameters) {
         }
         xQueueSend(qBpm, &bpm, 0);
         xQueueSend(qSpo2, &spo2, 0);
-        vTaskDelay(pdMS_TO_TICKS(10));
+
+        /* Parmak varsa hızlı, yoksa yavaş polling → low-power */
+        if (max30102_is_finger_detected()) {
+            vTaskDelay(POLL_FAST_MS);
+        } else {
+            vTaskDelay(POLL_SLOW_MS);
+        }
     }
 }
 

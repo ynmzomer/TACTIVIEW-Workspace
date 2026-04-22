@@ -62,7 +62,7 @@
 #define configUSE_PREEMPTION                     1
 #define configSUPPORT_STATIC_ALLOCATION          1
 #define configSUPPORT_DYNAMIC_ALLOCATION         1
-#define configUSE_IDLE_HOOK                      0
+#define configUSE_IDLE_HOOK                      1
 #define configUSE_TICK_HOOK                      0
 #define configCPU_CLOCK_HZ                       ( SystemCoreClock )
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
@@ -168,6 +168,15 @@ standard names. */
 
 /* USER CODE BEGIN Defines */
 /* Section where parameter definitions can be added (for instance, to override default ones in FreeRTOS.h) */
+
+/* Low Power: FreeRTOS tickless idle (built-in, SLEEP mode via __WFI)
+ * = 1 → port.c manipulates SysTick only; TIM6 (HAL timebase) keeps running.
+ * CPU enters SLEEP mode when all tasks are blocked; any interrupt wakes it.
+ * USART1/USART3 RX interrupts remain active in SLEEP → no bytes missed. */
+#define configUSE_TICKLESS_IDLE                  1
+/* Skip tickless entry for idle gaps shorter than 4 ticks (4 ms) — avoids
+ * unnecessary SysTick stop/restore overhead for very brief idles. */
+#define configEXPECTED_IDLE_TIME_BEFORE_SLEEP    4
 /* USER CODE END Defines */
 
 #endif /* FREERTOS_CONFIG_H */

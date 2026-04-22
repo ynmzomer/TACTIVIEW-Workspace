@@ -39,6 +39,9 @@ void max30102_user_read(uint8_t* bpm, uint8_t* spo2);
 void filter_ir_block(const uint32_t *in, float *out, uint8_t n);
 uint8_t detect_peak_and_bpm(float sample);
 void update_finger_detection(float sample);
+/* Low-power: returns 1 when a finger is currently on the sensor, 0 otherwise.
+ * Used by pulse_task to switch between fast (10 ms) and slow (500 ms) polling. */
+uint8_t max30102_is_finger_detected(void);
 
 
 extern UART_HandleTypeDef huart2;
