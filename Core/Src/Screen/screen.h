@@ -16,9 +16,9 @@
 #define PAGE_CHAR  0x31 //'1'
 #define END_CHAR   0x26 // '&'
 
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart3;
 
-#define SCREEN_UART_HANDLE (&huart1)
+#define SCREEN_UART_HANDLE (&huart3)
 
 void NX_send_raw(const void *buf, size_t len);
 

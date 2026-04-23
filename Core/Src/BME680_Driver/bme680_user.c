@@ -12,7 +12,6 @@
 static struct bme68x_dev bme;              // BME680/BME688 main device handler (contains interface + function pointers)
 static struct bme68x_conf conf;            // Sensor configuration (oversampling, filter, ODR settings)
 static struct bme68x_heatr_conf heatr_conf; // Gas heater configuration (heating temp + duration)
-static struct bme68x_data data;            // Latest measurement output (temp, humidity, pressure, gas_resistance)
 static uint8_t n_fields;                   // Number of valid data fields returned by the last measurement
 static int8_t rslt;                        // Result status of BME68X API calls (BME68X_OK = success)
 

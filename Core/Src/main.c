@@ -46,6 +46,13 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -80,7 +87,7 @@ TaskHandle_t enviroment_handle ;
 TaskHandle_t datatx_handle ;
 TaskHandle_t datarx_handle;
 
-
+uint32_t raw_pulse = 0;
 static SemaphoreHandle_t semphr_i2c;
 static QueueHandle_t qEnv, qBody, qBpm, qSpo2, qLora;
 /* USER CODE END 0 */
@@ -160,8 +167,51 @@ int main(void)
   vTaskStartScheduler();
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
   /* We should never get here as control is now taken by the scheduler */
-  while (1) {}
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
 }
 
 /**
@@ -184,13 +234,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 16;
-  RCC_OscInitStruct.PLL.PLLN = 336;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
-  RCC_OscInitStruct.PLL.PLLR = 2;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -200,12 +244,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
@@ -406,7 +450,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART1) //nextion uart bu adresi kullanyor.
+    if (huart->Instance == USART3) //nextion uart bu adresi kullanyor.
     {
     	//byte mesajı ayıklama.
         switch (screen_state)
@@ -449,7 +493,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         // UART kesmesi içinde tekrar 1 byte al
         HAL_UART_Receive_IT(&huart1, &screen_rx_byte, 1);
     }
-    if(huart->Instance == USART3){ //lora uart bu adresi kullanıyor. //todo gereksiz uart girişi var.
+    if(huart->Instance == USART1){ //lora uart bu adresi kullanıyor. //todo gereksiz uart girişi var.
     	if (lora_rx_byte == '\r') {
     	    // ignore carriage return
     	}else if(lora_rx_byte != '\n'){
@@ -551,7 +595,7 @@ void screen_data_tx_task(void *pvParameters) {
 
     NX_Init(); // ekranı başlat.
 
-    HAL_UART_Receive_IT(&huart3, &lora_rx_byte, 1); //lora recieve interrupt başlatıldı.
+    HAL_UART_Receive_IT(&huart1, &lora_rx_byte, 1); //lora recieve interrupt başlatıldı.
     for (;;) {
     	if(xQueueReceive(qBpm, &bpm, 50) != pdPASS){ //en hızlı gelen veri
 
@@ -600,14 +644,24 @@ void screen_data_tx_task(void *pvParameters) {
 }
 
 void screen_data_rx_task(void* pvParameters){
-	HAL_UART_Receive_IT(&huart1, &screen_rx_byte, 1); //screen recieve interrupt başlatıldı.
+	HAL_UART_Receive_IT(&huart3, &screen_rx_byte, 1); //screen recieve interrupt başlatıldı.
 	for(;;){
 		xTaskNotifyWait(0, 0, NULL, portMAX_DELAY); //bildirim bekle
 		if (screen_rx_byte == END_CHAR) {
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
 			case 0x01: //msg box number reset
-				NX_set_val("n0", 0); //if user enters the messages
+				NX_send_cmd("n0.val=0");
+				break;
+
+			case 0x02: //send pulse and spo2 info.
+				uint8_t bpm,body_temp;
+				if(xQueuePeek(qBpm, &bpm, 10) == pdTRUE || xQueuePeek(qBody, &body_temp, 10) == pdTRUE ){
+					snprintf(nextion_msg,sizeof(nextion_msg),"Pulse: %d, BODY TEMP: %d",bpm,body_temp);
+				}else{
+					snprintf(nextion_msg,sizeof(nextion_msg),"Pulse: ERR, BODY TEMP: ERR");
+				}
+				lora_send_msg(nextion_msg);
 				break;
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
 				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
@@ -651,6 +705,24 @@ void screen_data_rx_task(void* pvParameters){
 
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
 
 /**
   * @brief  Period elapsed callback in non blocking mode
