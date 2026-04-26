@@ -565,7 +565,11 @@ void enviroment_task(void *pvParameters) {
 
         if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             bme680_read_withiaq(&air_data);
-            mlx90614_read_ambient_temp(&air_data.tempe); // MLX ambient sıcaklığı
+            if(air_data.temperature > 30){
+            	air_data.tempe -= 6 ;
+            	air_data.temperature -= 6;
+
+            }
             xSemaphoreGive(semphr_i2c);
 
         }
@@ -579,6 +583,7 @@ void body_temp_task(void *pvParameters) {
     for (;;) {
         if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             mlx90614_read_temp(&temp);
+            temp+= 4.5 ;
             xSemaphoreGive(semphr_i2c);
         }
         xQueueSend(qBody,&temp,0); //todo düşün
