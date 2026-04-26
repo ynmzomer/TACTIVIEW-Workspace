@@ -541,8 +541,8 @@ void pulse_task(void *pvParameters) {
             xSemaphoreGive(semphr_i2c);
         }
         if(bpm > 2){
-        	/* 1-BPM deadband: sadece yuvarlama sınırındaki ±1 titreşimi filtreler */
-        	if(prev_bpm == 0 || (uint8_t)abs((int)bpm - (int)prev_bpm) > 1){
+        	/* 2-BPM deadband: bilek ölçümündeki ±1-2 titreşimi filtreler */
+        	if(prev_bpm == 0 || (uint8_t)abs((int)bpm - (int)prev_bpm) > 2){
         		prev_bpm = bpm;
         	}
         	bpm = prev_bpm;

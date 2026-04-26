@@ -401,7 +401,7 @@ uint8_t detect_peak_and_bpm(float sample)
             // EMA ile yumuşat
             if (!bpm_ema_inited) { bpm_ema_inited = 1u; bpm_ema = bpm; }
             else {
-                const float k = 0.30f; // medyan sonrası hızlı yakınsama
+                const float k = 0.10f; // bilek için yavaş yakınsama; ani spike'lar tutmuyor
                 bpm_ema = bpm_ema + k * (bpm - bpm_ema);
             }
 

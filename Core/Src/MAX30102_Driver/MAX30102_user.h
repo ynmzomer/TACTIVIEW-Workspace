@@ -10,21 +10,21 @@
 
 // ================== Ayarlar ==================
 #define SAMPLE_RATE_HZ       200u     // MAX30102 konfig ile eşleşmeli
-#define WARMUP_MS            2000u    // parmak takıldıktan sonra 2 sn ısınma
-#define MAX_PEAK_HISTORY     5u       // 5 interval ile daha hızlı BPM (bilek ölçümü için)
-#define MIN_RR_MS            150u     // refrakter süre (>=150ms → <=400 BPM)
-#define INIT_THRESHOLD       10.0f    // başlangıç eşiği (adaptif güncellenir) //20 default
+#define WARMUP_MS            5000u    // bilek için 5 sn ısınma (oturması için süre)
+#define MAX_PEAK_HISTORY     9u       // 9 interval → medyan artefakta karşı sağlam
+#define MIN_RR_MS            375u     // refrakter süre (>=375ms → <=160 BPM; artefakt engeli)
+#define INIT_THRESHOLD       10.0f    // başlangıç eşiği (adaptif güncellenir)
 
-// Parmak algılama (AC genlik E-MA’sına göre)
-#define AMP_ON_THRESH        10.0f    // parmak var demek için min AC genlik
-#define AMP_OFF_THRESH       8.0f     // parmak yok demek için AC alt sınır
-#define HOLD_ON_MS           400u     // bu kadar ms üstünde kalırsa "var"
+// Temas algılama (AC genlik E-MA’sına göre)
+#define AMP_ON_THRESH        10.0f    // temas var demek için min AC genlik
+#define AMP_OFF_THRESH       8.0f     // temas yok demek için AC alt sınır
+#define HOLD_ON_MS           700u     // bu kadar ms üstünde kalırsa "var" (yanlış temas engeli)
 #define HOLD_OFF_MS          800u     // bu kadar ms altında kalırsa "yok"
 
 // ================== Filtre Parametreleri ==================
 #define SPS_IR               200.0f
 #define TAU_BASELINE_S       2.0f
-#define FC_LPF_HZ            4.0f
+#define FC_LPF_HZ            3.0f    // 180 BPM = 3 Hz; üstü gürültü
 
 #include "main.h"
 #include "MAX30102.h"
