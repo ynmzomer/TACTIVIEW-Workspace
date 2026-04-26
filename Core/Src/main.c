@@ -565,6 +565,7 @@ void enviroment_task(void *pvParameters) {
 
         if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             bme680_read_withiaq(&air_data);
+            mlx90614_read_ambient_temp(&air_data.tempe); // MLX ambient sıcaklığı
             xSemaphoreGive(semphr_i2c);
 
         }

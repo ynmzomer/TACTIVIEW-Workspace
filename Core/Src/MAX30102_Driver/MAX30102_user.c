@@ -167,8 +167,8 @@ void max30102_user_init(void)
     max30102.sample_rate     = MAX30102_SAMPLERATE_200;
     max30102.adc_range       = MAX30102_ADCRANGE_16384;
     max30102.led_pw          = MAX30102_PW_411;            // 18-bit
-    max30102.led_current_ir  = MAX30102_LED_CURR_16MA;     // 12–20 mA arası deneyebilirsin eski değer 16
-    max30102.led_current_red = MAX30102_LED_CURR_16MA;     // SpO2 için 16mA gerekli
+    max30102.led_current_ir  = MAX30102_LED_CURR_31MA;     // maksimum akım (31 mA) — bilek için sinyal gücü
+    max30102.led_current_red = MAX30102_LED_CURR_31MA;     // maksimum akım (31 mA) — SpO2 kırmızı LED
 
     if (max30102_init(&max30102) != MAX30102_OK) {
         if (retry_count < 3u) {

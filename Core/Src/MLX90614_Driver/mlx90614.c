@@ -63,6 +63,23 @@ MLX90614_Status_t MLX90614_Config(MLX90614_Config_t *config , uint8_t do_config)
 
 
 
+void mlx90614_read_ambient_temp(int16_t* temp){
+    MLX90614_Status_t status;
+    uint16_t temp_k;
+    static uint16_t last_temp_k;
+    status = MLX90614_Read(MLX90614_AMBIENT_TEMP, (uint8_t*)&temp_k, 2);
+    if(status != MLX90614_OK){
+        MLX90614_Error_Handler(MLX90614_COM_ERROR);
+    }
+    if(temp_k == 0){
+        temp_k = last_temp_k;
+    } else {
+        last_temp_k = temp_k;
+    }
+    /* Kelvin * 0.02 − 273.15, int16 olarak döndür */
+    *temp = (int16_t)((temp_k * 0.02f) - 273.15f);
+}
+
 void mlx90614_read_temp(float* temp){
 	MLX90614_Status_t status;
 	uint16_t temp_k ;

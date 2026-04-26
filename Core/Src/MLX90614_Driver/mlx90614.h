@@ -114,6 +114,7 @@ typedef struct{
 MLX90614_Status_t mlx90614_init(void);
 
 void mlx90614_read_temp(float* temp);
+void mlx90614_read_ambient_temp(int16_t* temp);
 
 MLX90614_Status_t MLX90614_ID_Check();
 

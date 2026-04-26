@@ -763,6 +763,9 @@ struct bme68x_data
 
 #endif
 
+    /*! Ambient temperature from MLX90614 in degree celsius (int16) */
+    int16_t tempe;
+
 };
 
 /*
