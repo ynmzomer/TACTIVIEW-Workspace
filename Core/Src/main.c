@@ -438,13 +438,13 @@ static void MX_GPIO_Init(void)
 /* Re-arm receive IT after a UART error so the ISR is never permanently lost */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART1)
-    {
-        HAL_UART_Receive_IT(&huart1, &screen_rx_byte, 1);
-    }
     if (huart->Instance == USART3)
     {
-        HAL_UART_Receive_IT(&huart3, &lora_rx_byte, 1);
+        HAL_UART_Receive_IT(&huart3, &screen_rx_byte, 1);
+    }
+    if (huart->Instance == USART1)
+    {
+        HAL_UART_Receive_IT(&huart1, &lora_rx_byte, 1);
     }
 }
 
@@ -491,7 +491,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
         }
 
         // UART kesmesi içinde tekrar 1 byte al
-        HAL_UART_Receive_IT(&huart1, &screen_rx_byte, 1);
+        HAL_UART_Receive_IT(&huart3, &screen_rx_byte, 1);
     }
     if(huart->Instance == USART1){ //lora uart bu adresi kullanıyor. //todo gereksiz uart girişi var.
     	if (lora_rx_byte == '\r') {
@@ -509,7 +509,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     		}
     		lora_rx_index = 0;
     	}
-    	HAL_UART_Receive_IT(&huart3, &lora_rx_byte, 1);
+    	HAL_UART_Receive_IT(&huart1, &lora_rx_byte, 1);
 
 
 
