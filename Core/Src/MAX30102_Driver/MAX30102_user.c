@@ -360,7 +360,7 @@ uint8_t detect_peak_and_bpm(float sample)
             peaks_ignored++; //overflow yapar mı
             // adaptif threshold'u yine de güncelleyelim (daha rahat yakalasın)
             float new_thr = 0.25f * detected_peak_value;
-            if (new_thr < 30.0f) new_thr = 30.0f; // burada min threshold 30 olabilir böyle ayarlanmış.
+            if (new_thr < 22.0f) new_thr = 22.0f; // bilek için min threshold (zayıf atımlar kaçmasın)
             peak_threshold = new_thr;
             prev_sample = sample;
             return PULSE_IN_PROCESS;
@@ -379,7 +379,7 @@ uint8_t detect_peak_and_bpm(float sample)
 
         // Adaptif threshold (agresif)
         float new_thr = 0.25f * detected_peak_value;
-        if (new_thr < 30.0f) new_thr = 30.0f; // burada min threshold 30 olabilir böyle ayarlanmış.
+        if (new_thr < 22.0f) new_thr = 22.0f; // bilek için min threshold (zayıf atımlar kaçmasın)
         peak_threshold = new_thr;
 
         // FIFO dolunca BPM hesapla — medyan tabanlı (artefakt interval'a bağışıklı)
@@ -401,7 +401,7 @@ uint8_t detect_peak_and_bpm(float sample)
             // EMA ile yumuşat
             if (!bpm_ema_inited) { bpm_ema_inited = 1u; bpm_ema = bpm; }
             else {
-                const float k = 0.10f; // bilek için yavaş yakınsama; ani spike'lar tutmuyor
+                const float k = 0.13f; // bilek için yavaş-orta yakınsama; spike koruması korunur
                 bpm_ema = bpm_ema + k * (bpm - bpm_ema);
             }
 

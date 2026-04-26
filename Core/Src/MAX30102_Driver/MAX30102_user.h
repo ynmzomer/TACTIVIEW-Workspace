@@ -10,10 +10,10 @@
 
 // ================== Ayarlar ==================
 #define SAMPLE_RATE_HZ       200u     // MAX30102 konfig ile eşleşmeli
-#define WARMUP_MS            5000u    // bilek için 5 sn ısınma (oturması için süre)
+#define WARMUP_MS            3500u    // bilek için ~3.5 sn ısınma (ilk değer biraz daha erken)
 #define MAX_PEAK_HISTORY     9u       // 9 interval → medyan artefakta karşı sağlam
 #define MIN_RR_MS            375u     // refrakter süre (>=375ms → <=160 BPM; artefakt engeli)
-#define INIT_THRESHOLD       10.0f    // başlangıç eşiği (adaptif güncellenir)
+#define INIT_THRESHOLD       8.0f     // başlangıç eşiği (adaptif güncellenir)
 
 // Temas algılama (AC genlik E-MA’sına göre)
 #define AMP_ON_THRESH        10.0f    // temas var demek için min AC genlik
