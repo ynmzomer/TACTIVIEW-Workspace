@@ -186,7 +186,7 @@ void max30102_user_init(void)
 // ----------------------------------------------------
 // Polling okuma (main loop içinde çağır)
 // ----------------------------------------------------
-void max30102_user_read(uint8_t* bpm, uint8_t* spo2)
+void max30102_user_read(uint8_t* bpm, uint8_t* spo2, SensorState_t* state)
 {
     static uint8_t measured_bpm = 0;
     static uint8_t measured_spo2 = 0;
@@ -236,6 +236,15 @@ void max30102_user_read(uint8_t* bpm, uint8_t* spo2)
 
     *bpm  = measured_bpm;
     *spo2 = measured_spo2;
+
+    // Durum tespiti: finger_detected bu dosyada static, erişilebilir
+    if (!finger_detected) {
+        *state = SENSOR_NO_FINGER;
+    } else if (measured_bpm == 0) {
+        *state = SENSOR_WARMING_UP;   // takılı ama henüz BPM yok
+    } else {
+        *state = SENSOR_MEASURING;
+    }
 }
 
 // ----------------------------------------------------

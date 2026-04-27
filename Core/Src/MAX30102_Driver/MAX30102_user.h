@@ -31,17 +31,25 @@
 #include <stdio.h>
 #include <string.h>
 
+typedef enum {
+    SENSOR_NO_FINGER  = 0,
+    SENSOR_WARMING_UP = 1,
+    SENSOR_MEASURING  = 2,
+} SensorState_t;
+
 extern uint32_t ir_buf[32];
 extern uint32_t red_buf[32];
 extern uint8_t num_samples;
 void max30102_user_init(void);
-void max30102_user_read(uint8_t* bpm, uint8_t* spo2);
+void max30102_user_read(uint8_t* bpm, uint8_t* spo2, SensorState_t* state);
 void filter_ir_block(const uint32_t *in, float *out, uint8_t n);
 uint8_t detect_peak_and_bpm(float sample);
 void update_finger_detection(float sample);
 
 
 extern UART_HandleTypeDef huart2;
+
+
 
 
 typedef enum{
