@@ -692,10 +692,12 @@ void screen_data_rx_task(void* pvParameters){
 				break;
 
 			case 0x02: //send pulse and spo2 info.
-				uint8_t bpm,body_temp;
+				uint8_t bpm;
+				float body_temp;
 				if(xQueuePeek(qBpm, &bpm, 10) == pdTRUE || xQueuePeek(qBody, &body_temp, 10) == pdTRUE ){
-					snprintf(nextion_msg,sizeof(nextion_msg),"Pulse: %d, BODY TEMP: %d",bpm,body_temp);
+					snprintf(nextion_msg,sizeof(nextion_msg),"Pulse: %d, BODY TEMP: %d",bpm,(uint8_t)body_temp);
 				}else{
+
 					snprintf(nextion_msg,sizeof(nextion_msg),"Pulse: ERR, BODY TEMP: ERR");
 				}
 				lora_send_msg(nextion_msg);
