@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DEVICE_ID 1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -536,7 +536,8 @@ void pulse_task(void *pvParameters) {
     uint8_t prev_bpm = 0;
     SensorState_t state ;
     static uint8_t fake_bpm = 0;
-
+    static const TickType_t POLL_FAST_MS = pdMS_TO_TICKS(10);
+    static const TickType_t POLL_SLOW_MS = pdMS_TO_TICKS(500);
 
     for (;;) {
         if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
@@ -577,7 +578,11 @@ void pulse_task(void *pvParameters) {
         }
         xQueueSend(qBpm, &bpm, 0);
         xQueueSend(qSpo2, &spo2, 0);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        if (state == SENSOR_NO_FINGER) {
+              vTaskDelay(POLL_SLOW_MS);
+         } else {
+              vTaskDelay(POLL_FAST_MS);
+         }
     }
 }
 
@@ -696,33 +701,33 @@ void screen_data_rx_task(void* pvParameters){
 				lora_send_msg(nextion_msg);
 				break;
 			case 0x04: // I'M OK //ayıklanan byte da gelen veriye göre aksiyon al
-				snprintf(nextion_msg,sizeof(nextion_msg),"I'm OK\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"ID:%d I'M OK\n",DEVICE_ID);
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x05: // HELP
-				snprintf(nextion_msg,sizeof(nextion_msg),"HELP\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"ID:%d HELP\n",DEVICE_ID);
 				lora_send_msg(nextion_msg);
 
 				break;
 
 			case 0x06: // DANGER
-				snprintf(nextion_msg,sizeof(nextion_msg),"DANGER\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"ID:%d DANGER\n",DEVICE_ID);
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x07: // INJURED
-				snprintf(nextion_msg,sizeof(nextion_msg),"INJURED\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"ID:%d INJURED\n",DEVICE_ID);
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x08: // AREA UNSAFE
-				snprintf(nextion_msg,sizeof(nextion_msg),"AREA UNSAFE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"ID:%d AREA UNSAFE\n",DEVICE_ID);
 				lora_send_msg(nextion_msg);
 				break;
 
 			case 0x09: // RETURN TO BASE
-				snprintf(nextion_msg,sizeof(nextion_msg),"RETURN TO BASE\n");
+				snprintf(nextion_msg,sizeof(nextion_msg),"ID:%d RETURN TO BASE\n",DEVICE_ID);
 				lora_send_msg(nextion_msg);
 				break;
 
