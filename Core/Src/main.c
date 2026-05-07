@@ -87,6 +87,7 @@ TaskHandle_t enviroment_handle ;
 TaskHandle_t datatx_handle ;
 TaskHandle_t datarx_handle;
 
+
 uint32_t raw_pulse = 0;
 static SemaphoreHandle_t semphr_i2c;
 static QueueHandle_t qEnv, qBody, qBpm, qSpo2, qLora;
@@ -129,32 +130,36 @@ int main(void)
   HAL_Delay(1000);
   BaseType_t status;
 
-  status = xTaskCreate(sensors_init_task, "Sensors Init Task", 512, NULL, 1, &sensors_init_handle);
+  status = xTaskCreate(sensors_init_task, "Sensors Init Task", 1024, NULL, 1, &sensors_init_handle);
   if(status != pdPASS ){
 	  Error_Handler();
   }
-  status = xTaskCreate(pulse_task, "Pulse Task", 512, NULL, 1, &pulse_handle);
+  status = xTaskCreate(pulse_task, "Pulse Task", 2048, NULL, 1, &pulse_handle);
   if(status != pdPASS ){
 	  Error_Handler();
   }
-  status = xTaskCreate(enviroment_task, "Enviroment Task", 512, NULL, 1, &enviroment_handle);
+  status = xTaskCreate(enviroment_task, "Enviroment Task", 2048, NULL, 1, &enviroment_handle);
   if(status != pdPASS ){
 	  Error_Handler();
   }
-  status = xTaskCreate(body_temp_task, "Body Temp Task", 512, NULL, 1, &body_temp_handle);
+  status = xTaskCreate(body_temp_task, "Body Temp Task", 2048, NULL, 1, &body_temp_handle);
   if(status != pdPASS ){
 	  Error_Handler();
   }
-  status = xTaskCreate(screen_data_tx_task, "Screen Data Transmit Task", 512, NULL, 1, &datatx_handle);
+  status = xTaskCreate(screen_data_tx_task, "Screen Data Transmit Task", 2048, NULL, 1, &datatx_handle);
   if(status != pdPASS ){
 	  Error_Handler();
   }
 
-  status = xTaskCreate(screen_data_rx_task, "Screen Data Recieve Task", 512, NULL, 1, &datarx_handle);
+  status = xTaskCreate(screen_data_rx_task, "Screen Data Recieve Task", 2048, NULL, 1, &datarx_handle);
   if(status != pdPASS ){
 	  Error_Handler();
   }
-  semphr_i2c = xSemaphoreCreateBinary();
+
+
+  semphr_i2c = xSemaphoreCreateMutex();
+
+
 
   qEnv = xQueueCreate(5,sizeof(struct bme68x_data));
   qBody = xQueueCreate(5,sizeof(float));
@@ -434,6 +439,15 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
+    (void)xTask; (void)pcTaskName;
+    __BKPT(0);
+    for(;;);
+}
+void vApplicationMallocFailedHook(void) {
+    __BKPT(0);
+    for(;;);
+}
 
 /* Re-arm receive IT after a UART error so the ISR is never permanently lost */
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
@@ -559,7 +573,7 @@ void pulse_task(void *pvParameters) {
             case SENSOR_WARMING_UP:
                 // Her 2 saniyede bir hafifçe oynasın (±1)
                 if ((HAL_GetTick() % 2000) < 100) {
-                    int8_t delta = (rand() % 3) - 1;  // -1, 0, +1
+                    int8_t delta = (10 % 3) - 1;  // -1, 0, +1
                     fake_bpm += delta;
                     if (fake_bpm < 62) fake_bpm = 62;
                     if (fake_bpm > 72) fake_bpm = 72;
@@ -606,8 +620,11 @@ void enviroment_task(void *pvParameters) {
 }
 
 void body_temp_task(void *pvParameters) {
-    float temp;
+    float temp = 0;
     for (;;) {
+    	if((int32_t)temp == -268){
+    		NVIC_SystemReset();
+    	}
         if (xSemaphoreTake(semphr_i2c, pdMS_TO_TICKS(500)) == pdTRUE) {
             mlx90614_read_temp(&temp);
             temp+= 4.5 ;
@@ -621,12 +638,13 @@ void body_temp_task(void *pvParameters) {
 void screen_data_tx_task(void *pvParameters) {
 	uint8_t bpm;
 	uint8_t spo2;
-	char lora_msg_task[30];
+	char lora_msg_task[72];
 	float body_temp;
     struct bme68x_data air_data;
     char air_q[20]; //air quality string
 
     NX_Init(); // ekranı başlat.
+    uint32_t last_time = HAL_GetTick();
 
     HAL_UART_Receive_IT(&huart1, &lora_rx_byte, 1); //lora recieve interrupt başlatıldı.
     for (;;) {
@@ -641,17 +659,54 @@ void screen_data_tx_task(void *pvParameters) {
     	}
     	if(xQueueReceive(qEnv,  &air_data, 50) != pdPASS){ // yavaş gelen veri
 
-    	}if(xQueueReceive(qLora, lora_msg_task, 5) == pdPASS){
-  		  NX_send_cmd("page0.n0.val+=1");
+    	}
+    	if (xQueueReceive(qLora, lora_msg_task, 5) == pdPASS)
+    	{
+    	    int target_id = 0;
+    	    char msg[64] = {0};
+    	    uint8_t show_msg = 1;
 
-  		  NX_send_cmd("page3.m4.txt=page3.m3.txt");
-  		  NX_send_cmd("page3.m3.txt=page3.m2.txt");
-  		  NX_send_cmd("page3.m2.txt=page3.m1.txt");
-  		  char nextionCmd[64];
-  		  snprintf(nextionCmd, sizeof(nextionCmd), "page3.m1.txt=\"%s\"", lora_msg_task);
-  		  NX_send_cmd(nextionCmd);
+    	    // LoRa modül cevaplarını ve monitoring paketlerini gösterme
+    	    if (strcmp(lora_msg_task, "CCESS") == 0 ||
+    	        strcmp(lora_msg_task, "CESS") == 0 ||
+    	        strcmp(lora_msg_task, "SS") == 0 ||
+    	        strcmp(lora_msg_task, "SUCCESS") == 0 ||
+				strcmp(lora_msg_task, "ESS") == 0 ||
+				strcmp(lora_msg_task, "S") == 0 ||
+    	        lora_msg_task[0] == '!')
+    	    {
+    	        show_msg = 0;
+    	    }
 
+    	    // ADM ID=x MSG=... formatındaki yönetici mesajı
+    	    else if (sscanf(lora_msg_task, "ADM ID=%d MSG=%63[^\n]", &target_id, msg) == 2)
+    	    {
+    	        if (target_id != DEVICE_ID)
+    	        {
+    	            // Mesaj bu cihaza ait değilse pas geç
+    	            show_msg = 0;
+    	        }
+    	        else
+    	        {
+    	            // Mesaj bu cihaza aitse sadece MSG içeriğini göster
+    	        	snprintf(lora_msg_task, sizeof(lora_msg_task), "Admin: %s", msg);
+    	        }
+    	    }
 
+    	    if (show_msg)
+    	    {
+    	        NX_send_cmd("page0.n0.val+=1");
+
+    	        NX_send_cmd("page3.m4.txt=page3.m3.txt");
+    	        NX_send_cmd("page3.m3.txt=page3.m2.txt");
+    	        NX_send_cmd("page3.m2.txt=page3.m1.txt");
+
+    	        char nextionCmd[96];
+    	        snprintf(nextionCmd, sizeof(nextionCmd),
+    	                 "page3.m1.txt=\"%s\"", lora_msg_task);
+
+    	        NX_send_cmd(nextionCmd);
+    	    }
     	}
     	if(bpm == 0 || spo2 == 0){
     		bpm = 0;
@@ -665,6 +720,26 @@ void screen_data_tx_task(void *pvParameters) {
     	NX_set_float(box_body_temp, (body_temp));
     	air_quality(&air_data, air_q);
     	NX_set_txt(box_air_quality, air_q);
+
+
+    	if(HAL_GetTick() - last_time >= 30000)
+    	{
+    	    last_time = HAL_GetTick();
+
+    	    char monitor_msg[128];
+
+    	    snprintf(monitor_msg, sizeof(monitor_msg),
+    	             "!ID=%d BPM=%d SPO2=%d BT=%.2f T=%d H=%d IAQ=%s\n",
+    	             DEVICE_ID,
+					 bpm,
+    	             spo2,
+    	             body_temp,
+    	             (int16_t)(air_data.temperature + 0.5f),
+    	             (int16_t)(air_data.humidity + 0.5f),
+    	             air_q);
+
+    	    lora_send_msg(monitor_msg);
+    	}
 
         vTaskDelay(pdMS_TO_TICKS(200)); // BME680 periyodunda
 #ifdef UART_LOG
@@ -688,7 +763,7 @@ void screen_data_rx_task(void* pvParameters){
 			// ✅ Tam paket alındı
 			switch (screen_comp) {
 			case 0x01: //msg box number reset
-				NX_send_cmd("n0.val=0");
+				NX_send_cmd("page0.n0.val=0");
 				break;
 
 			case 0x02: //send pulse and spo2 info.

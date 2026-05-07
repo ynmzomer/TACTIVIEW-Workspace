@@ -15,7 +15,7 @@ extern I2C_HandleTypeDef hi2c1;
 #define I2C_HANDLE    (&hi2c1)
 
 
-#define MAX_TIMEOUT 					HAL_MAX_DELAY
+#define MAX_TIMEOUT 					100
 #define MLX90614_ADDR					(uint8_t)0x5A
 
 /*====================================
